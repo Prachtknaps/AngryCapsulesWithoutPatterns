@@ -4,10 +4,18 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    [Header("Options")]
+    [SerializeField] private bool allowSprinting = true;
+    [SerializeField] private bool allowJumping = true;
+
     public bool CanMove { get; private set; } = true;
+    private bool IsSprinting => allowSprinting && Input.GetKey(sprintKey);
+    private bool ShouldJump => Input.GetKeyDown(jumpKey) && playerController.isGrounded;
 
     // Movement
-    private float walkSpeed = 3.0f;
+    private float walkSpeed = 2.0f;
+    private float sprintSpeed = 4.5f;
+    private float jumpForce = 4.5f;
     private float gravity = -9.81f;
     private Vector3 movementVector = Vector3.zero;
     private Vector2 movementInput = Vector2.zero;
@@ -18,6 +26,10 @@ public class PlayerController : MonoBehaviour
     private float maxLookUp = -60.0f;
     private float maxLookDown = 80.0f;
     private float verticalRotation = 0.0f;
+
+    // Key Bindings
+    private KeyCode sprintKey = KeyCode.LeftShift;
+    private KeyCode jumpKey = KeyCode.Space;
 
     private CharacterController playerController = null;
     private Transform playerHead = null;
@@ -42,13 +54,18 @@ public class PlayerController : MonoBehaviour
             ProcessMovement();
             ProcessRotation();
 
+            if (allowJumping)
+            {
+                ProcessJump();
+            }
+
             MovePlayer();
         }
     }
 
     private void ProcessMovement()
     {
-        movementInput = new Vector2(walkSpeed * Input.GetAxis("Vertical"), walkSpeed * Input.GetAxis("Horizontal"));
+        movementInput = new Vector2((IsSprinting ? sprintSpeed : walkSpeed) * Input.GetAxis("Vertical"), (IsSprinting ? sprintSpeed : walkSpeed) * Input.GetAxis("Horizontal"));
 
         float movementVectorY = movementVector.y;
         movementVector = (transform.TransformDirection(Vector3.forward) * movementInput.x) + (transform.TransformDirection(Vector3.right) * movementInput.y);
@@ -62,6 +79,14 @@ public class PlayerController : MonoBehaviour
         playerHead.transform.localRotation = Quaternion.Euler(verticalRotation, 0.0f, 0.0f);
 
         transform.rotation *= Quaternion.Euler(0.0f, Input.GetAxis("Mouse X") * mouseSensitivityX, 0.0f);
+    }
+
+    private void ProcessJump()
+    {
+        if (ShouldJump)
+        {
+            movementVector.y = jumpForce;
+        }
     }
 
     private void MovePlayer()
