@@ -1,12 +1,17 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    [Header("Game Manager")]
+    [SerializeField] private GameManager gameManager = null;
+
     [Header("Options")]
     [SerializeField] private bool allowSprinting = true;
     [SerializeField] private bool allowJumping = true;
+
+    [Header("Audio")]
+    [SerializeField] private AudioClip collectItemSound = null;
+    private AudioSource audioSource = null; 
 
     public bool CanMove { get; private set; } = true;
     private bool IsSprinting => allowSprinting && Input.GetKey(sprintKey);
@@ -35,20 +40,19 @@ public class PlayerController : MonoBehaviour
     private Transform playerHead = null;
     private Camera playerCamera = null;
 
+    private IWeapon weapon = null;
 
     void Awake()
     {
         playerController = GetComponent<CharacterController>();
         playerHead = transform.GetChild(0);
         playerCamera = playerHead.GetComponentInChildren<Camera>();
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        audioSource = GetComponent<AudioSource>();
     }
 
     void Update()
     {
-        if (CanMove)
+        if (CanMove && gameManager.GetState() == GameState.RUNNING)
         {
             ProcessMovement();
             ProcessRotation();
@@ -58,8 +62,17 @@ public class PlayerController : MonoBehaviour
                 ProcessJump();
             }
 
+            ProcessShooting();
+
             MovePlayer();
         }
+    }
+
+    public void SetWeapon(IWeapon weapon)
+    {
+        audioSource.clip = collectItemSound;
+        audioSource.Play();
+        this.weapon = weapon;
     }
 
     private void ProcessMovement()
@@ -96,5 +109,26 @@ public class PlayerController : MonoBehaviour
         }
 
         playerController.Move(movementVector * Time.deltaTime);
+    }
+
+    private void ProcessShooting()
+    {
+        if (weapon != null)
+        {
+            if (Input.GetKeyDown(KeyCode.Mouse0))
+            {
+                if (weapon is BalloonGun)
+                {
+                    weapon.Shoot();
+                }
+            }
+            if (Input.GetKey(KeyCode.Mouse0))
+            {
+                if (weapon is ShrinkRayGun)
+                {
+                    weapon.Shoot();
+                }
+            }
+        }
     }
 }
