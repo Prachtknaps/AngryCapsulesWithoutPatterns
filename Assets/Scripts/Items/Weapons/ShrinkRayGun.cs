@@ -3,14 +3,25 @@ using UnityEngine;
 public class ShrinkRayGun : MonoBehaviour, IWeapon
 {
     [Header("Options")]
-    [SerializeField] private float interval = 0.15f;
+    [SerializeField] private float interval = 0.25f;
     private float lastShootTime = 0.0f;
+    private AudioSource audioSource;
+
+    private void Awake()
+    {
+        audioSource = GetComponent<AudioSource>();
+    }
 
     public void Shoot()
     {
         if (Time.time - lastShootTime >= interval)
         {
             lastShootTime = Time.time;
+
+            if (!audioSource.isPlaying)
+            {
+                audioSource.Play();
+            }
 
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit, 100.0f))

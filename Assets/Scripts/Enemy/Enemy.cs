@@ -15,8 +15,9 @@ public class Enemy : MonoBehaviour
 
     private NavMeshAgent agent = null;
     private bool isMoving = false;
+    private bool shouldWander = true;
 
-    void Start()
+    private void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         StartCoroutine(Wander());
@@ -28,6 +29,7 @@ public class Enemy : MonoBehaviour
         if (anger >= 100.0f)
         {
             anger = 100.0f;
+            StopWandering();
             Destroy(transform.gameObject);
         }
 
@@ -36,17 +38,21 @@ public class Enemy : MonoBehaviour
 
     private IEnumerator Wander()
     {
-        while (true)
+        while (shouldWander)
         {
             if (!isMoving)
             {
                 Vector3 randomDestination = GetRandomPoint(transform.position, walkRadius);
-                agent.SetDestination(randomDestination);
-                isMoving = true;
 
-                while (agent.remainingDistance > agent.stoppingDistance)
+                if (agent.isOnNavMesh)
                 {
-                    yield return null;
+                    agent.SetDestination(randomDestination);
+                    isMoving = true;
+
+                    while (agent.isOnNavMesh && !agent.pathPending && agent.remainingDistance > agent.stoppingDistance)
+                    {
+                        yield return null;
+                    }
                 }
 
                 yield return new WaitForSeconds(idleTime);
@@ -68,5 +74,10 @@ public class Enemy : MonoBehaviour
             return hit.position;
         }
         return origin;
+    }
+
+    public void StopWandering()
+    {
+        shouldWander = false;
     }
 }
